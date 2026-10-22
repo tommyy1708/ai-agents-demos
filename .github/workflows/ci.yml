@@ -10,14 +10,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        demo: [c4-secure-support-agent, c6-golden-set-ci]
+        demo: [c4-secure-support-agent, c5-hotel-voice-agent, c6-golden-set-ci]
     defaults:
       run:
         working-directory: ${{ matrix.demo }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-      # Mock mode: no API key, no cost.
+      # No API keys in CI: mock mode, and the week 5 agent evaluations are skipped.
       - run: uv sync --locked
       - run: uv run pytest
 

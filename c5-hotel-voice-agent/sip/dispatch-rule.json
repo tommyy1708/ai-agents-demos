@@ -1,0 +1,10 @@
+{
+  "dispatch_rule": {
+    "name": "Clarium Bay Hotel calls",
+    "rule": {
+      "dispatch_rule_individual": {
+        "room_prefix": "call-"
+      }
+    }
+  }
+}

@@ -52,6 +52,57 @@
       ]
     },
     {
+      "id": "c5-hotel-voice-agent",
+      "title": "A hotel voice reservation agent, one variable at a time",
+      "summary": "The workshop's five steps: the tools alone, then Claude in text, then voice on your laptop, then a WebRTC room, then a guide to taking phone calls. Checks availability, books rooms, answers policy questions from a knowledge file, and logs the latency of every turn.",
+      "path": "c5-hotel-voice-agent",
+      "slides": [
+        {
+          "resource": "lesson5",
+          "pages": [
+            41,
+            45
+          ]
+        },
+        {
+          "resource": "lesson5",
+          "pages": [
+            17,
+            19
+          ]
+        },
+        {
+          "resource": "lesson5",
+          "pages": [
+            27,
+            29
+          ]
+        },
+        {
+          "resource": "lesson5",
+          "pages": [
+            86,
+            86
+          ]
+        }
+      ],
+      "run": "uv run hotel smoke",
+      "stack": [
+        "Python",
+        "LiveKit Agents",
+        "Claude",
+        "Deepgram",
+        "Cartesia"
+      ],
+      "needs": [
+        "uv"
+      ],
+      "optional": [
+        "ANTHROPIC_API_KEY (from step 02)",
+        "a free LiveKit Cloud project (from step 03)"
+      ]
+    },
+    {
       "id": "c6-golden-set-ci",
       "title": "Tracing, a golden set, a release gate and a nightly judge",
       "summary": "The Week 4 support agent with the after-launch layer: a trace of every request with its time and cost, a golden dataset that gates every release in CI, and a nightly judge that catches drift as a falling score.",
