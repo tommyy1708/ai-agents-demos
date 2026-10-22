@@ -13,7 +13,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from livekit.agents import AgentServer, AgentSession, JobContext, JobProcess, MetricsCollectedEvent, cli, inference, metrics
+from livekit.agents import AgentServer, AgentSession, ChatMessage, ConversationItemAddedEvent, JobContext, JobProcess, cli, inference
 from livekit.plugins import silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
@@ -35,26 +35,31 @@ server = AgentServer(setup_fnc=prewarm)
 
 
 class LatencyLog:
-    """Prints how long each step of a turn took: the voice-to-voice budget from the slides, measured."""
+    """After each reply, logs how long the caller waited and where the time went: the budget from slide 19,
+    measured. LiveKit attaches these timings to each message in the conversation."""
 
     def __init__(self) -> None:
-        self.turns: dict[str, dict[str, float]] = {}
+        self.end_of_turn = 0.0
 
-    def __call__(self, ev: MetricsCollectedEvent) -> None:
-        m = ev.metrics
-        speech = getattr(m, "speech_id", None)
-        if speech is None:
+    def __call__(self, ev: ConversationItemAddedEvent) -> None:
+        item = ev.item
+        if not isinstance(item, ChatMessage):
             return
-        t = self.turns.setdefault(speech, {})
-        if isinstance(m, metrics.EOUMetrics):
-            t["end of turn"] = m.end_of_utterance_delay
-        elif isinstance(m, metrics.LLMMetrics):
-            t["Claude first token"] = m.ttft
-        elif isinstance(m, metrics.TTSMetrics):
-            t["first audio"] = m.ttfb
-            parts = " + ".join(f"{k} {v * 1000:.0f} ms" for k, v in t.items())
-            log.info("turn latency: %s = %.0f ms", parts, sum(t.values()) * 1000)
-            self.turns.pop(speech, None)
+        m = item.metrics or {}
+        if item.role == "user":
+            self.end_of_turn = m.get("end_of_turn_delay", 0.0)
+            return
+        if item.role != "assistant" or "e2e_latency" not in m:
+            return
+        parts = {
+            "end of turn": self.end_of_turn,
+            "Claude first token": m.get("llm_node_ttft", 0.0),
+            "first audio": m.get("tts_node_ttfb", 0.0),
+        }
+        # Whatever is left: tool calls, and a first model call that only asked for a tool.
+        parts["tools and other steps"] = max(m["e2e_latency"] - sum(parts.values()), 0.0)
+        detail = ", ".join(f"{k} {v * 1000:.0f}" for k, v in parts.items() if v)
+        log.info("caller waited %.0f ms (%s)", m["e2e_latency"] * 1000, detail)
 
 
 @server.rtc_session()
@@ -64,9 +69,10 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=build_llm(),
         tts=inference.TTS(TTS_MODEL),
         vad=ctx.proc.userdata["vad"],
-        turn_detection=MultilingualModel(),
+        # End of turn is decided by a small model that reads the transcript, not by silence alone (slides 17-18).
+        turn_handling={"turn_detection": MultilingualModel()},
     )
-    session.on("metrics_collected", LatencyLog())
+    session.on("conversation_item_added", LatencyLog())
     await session.start(agent=HotelAgent(), room=ctx.room)
     await session.generate_reply(instructions="Greet the caller as the Clarium Bay Hotel and ask how you can help.")
 

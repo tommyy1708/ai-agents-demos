@@ -70,14 +70,16 @@ agent> Your reservation is booked. Your confirmation code is M, N, U, 9, 4, U.
 ```
 
 **03 Local voice.** `hotel-voice console` uses your laptop's microphone and speaker. Talk to it. After each
-reply, the log shows where the time went:
+reply, the log shows how long you waited and where the time went:
 
 ```
-turn latency: end of turn … ms + Claude first token … ms + first audio … ms = … ms
+caller waited … ms (end of turn …, Claude first token …, first audio …, tools and other steps …)
 ```
 
-Slide 19 budgets about 700 ms from the end of your turn to the first sound. Compare. (Press Ctrl+T to switch to
-text, Ctrl+C to quit.)
+Slide 19 budgets about 700 ms from the end of your turn to the first sound. Compare, and notice what a tool call
+adds: the model first asks for the tool, the tool runs, and only then does the model start the reply you hear.
+(Press Ctrl+T to switch to text, Ctrl+C to quit. LiveKit is moving console mode into its own CLI as
+`lk agent console`; with the version pinned here, `hotel-voice console` works and prints a notice about it.)
 
 **04 Room.** `hotel-voice dev` connects the agent to your LiveKit Cloud project, where it waits for rooms. Open
 your project in the [LiveKit Cloud dashboard](https://cloud.livekit.io) and start a session in its Agent Console
