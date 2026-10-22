@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        demo: [c4-secure-support-agent]
+        demo: [c4-secure-support-agent, c6-golden-set-ci]
     defaults:
       run:
         working-directory: ${{ matrix.demo }}
@@ -20,3 +20,16 @@ jobs:
       # Mock mode: no API key, no cost.
       - run: uv sync --locked
       - run: uv run pytest
+
+  # Week 6, slide 32: ship only if every golden case passes.
+  release-gate:
+    needs: demos
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: c6-golden-set-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run golden run

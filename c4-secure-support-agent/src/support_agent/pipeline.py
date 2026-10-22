@@ -1,6 +1,8 @@
 """One customer message through every layer, in order, with a record of what each layer decided.
 
 The order is fixed in code, not left to a model: a message that fails a check never reaches the next layer.
+Each layer is an OpenTelemetry span (agent.turn, security.sanitize, ...). They cost nothing until something
+collects them; the Week 6 demo turns them into traces.
 """
 
 from contextlib import closing
@@ -11,6 +13,7 @@ from google.adk.agents import BaseAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
+from opentelemetry import trace
 
 from support_agent import config, shop
 from support_agent.agent import support_agent
@@ -19,6 +22,8 @@ from support_agent.models import tool_payload
 from support_agent.services import card_url
 
 APP = "secure-support-agent"
+
+tracer = trace.get_tracer("support_agent")
 
 
 @dataclass
@@ -40,7 +45,7 @@ class Turn:
         return any(not c.passed for c in self.checks)
 
 
-class _Agent:
+class AgentSession:
     """An agent with its own runner and session, so each layer keeps its own conversation."""
 
     def __init__(self, agent: BaseAgent, user_id: str, state: dict | None = None):
@@ -50,13 +55,15 @@ class _Agent:
         self.state = state
         self.session_id: str | None = None
 
-    async def ask(self, message: str, *, keep_history: bool = False, on_event=None) -> str:
+    async def ask(self, message: str, *, keep_history: bool = False, on_event=None, state_delta: dict | None = None) -> str:
         if self.session_id is None or not keep_history:
             session = await self.sessions.create_session(app_name=APP, user_id=self.user_id, state=self.state)
             self.session_id = session.id
         reply = ""
         content = types.Content(role="user", parts=[types.Part(text=message)])
-        async for event in self.runner.run_async(user_id=self.user_id, session_id=self.session_id, new_message=content):
+        async for event in self.runner.run_async(
+            user_id=self.user_id, session_id=self.session_id, new_message=content, state_delta=state_delta
+        ):
             if on_event:
                 on_event(event)
             if event.is_final_response() and event.content and event.content.parts:
@@ -73,32 +80,46 @@ class Pipeline:
             customer = shop.customer(conn, customer_email)
             if not customer:
                 raise ValueError(f"No customer with the email {customer_email}")
-            memory = shop.recall(conn, customer["email"])
         self.email = customer["email"]
-        self.judge = _Agent(RemoteA2aAgent(name="security_judge", agent_card=card_url(judge_port)), self.email)
-        self.guardrail = _Agent(guardrail_agent(), self.email)
-        self.agent = _Agent(
+        self.judge = AgentSession(RemoteA2aAgent(name="security_judge", agent_card=card_url(judge_port)), self.email)
+        self.guardrail = AgentSession(guardrail_agent(), self.email)
+        self.agent = AgentSession(
             support_agent(unsafe),
             self.email,
-            state={"customer_email": self.email, "customer_name": customer["name"], "memory": "\n".join(f"- {m}" for m in memory)},
+            state={"customer_email": self.email, "customer_name": customer["name"], "memory": ""},
         )
-        self.masker = _Agent(RemoteA2aAgent(name="data_masker", agent_card=card_url(masker_port)), self.email)
+        self.masker = AgentSession(RemoteA2aAgent(name="data_masker", agent_card=card_url(masker_port)), self.email)
 
     async def handle(self, message: str) -> Turn:
+        with tracer.start_as_current_span("agent.turn") as span:
+            span.set_attribute("customer", self.email)
+            turn = await self._handle(message)
+            span.set_attribute("blocked", turn.blocked)
+            return turn
+
+    async def _handle(self, message: str) -> Turn:
         turn = Turn(message)
 
-        def stop(check: Check) -> bool:
+        def stop(check: Check, span) -> bool:
             turn.checks.append(check)
+            span.set_attribute("passed", check.passed)
             if not check.passed:
+                span.set_attribute("reason", check.reason)
                 turn.reply = "Sorry, I can't help with that. I can help with your orders, deliveries and returns."
             return not check.passed
 
-        if stop(sanitize(message)):
-            return turn
-        if stop(judge_check(await self.judge.ask(message))):
-            return turn
-        if stop(guardrail_check(await self.guardrail.ask(message))):
-            return turn
+        with tracer.start_as_current_span("security.sanitize") as span:
+            if stop(sanitize(message), span):
+                return turn
+        with tracer.start_as_current_span("security.a2a_judge") as span:
+            if stop(judge_check(await self.judge.ask(message)), span):
+                return turn
+        with tracer.start_as_current_span("guardrail.check") as span:
+            if stop(guardrail_check(await self.guardrail.ask(message)), span):
+                return turn
+
+        with tracer.start_as_current_span("memory.recall"), closing(shop.connect(config.SHOP_DB)) as conn:
+            memory = "\n".join(f"- {m}" for m in shop.recall(conn, self.email))
 
         def record(event) -> None:
             for call in event.get_function_calls():
@@ -110,8 +131,9 @@ class Pipeline:
                         break
 
         try:
-            answer = await self.agent.ask(message, keep_history=True, on_event=record)
-            turn.reply = await self.masker.ask(answer) if answer else answer
+            answer = await self.agent.ask(message, keep_history=True, on_event=record, state_delta={"memory": memory})
+            with tracer.start_as_current_span("security.a2a_mask"):
+                turn.reply = await self.masker.ask(answer) if answer else answer
         except Exception as e:  # a model or service failure must not crash the conversation
             turn.checks.append(Check("support agent", False, f"failed: {e}"[:200]))
             turn.reply = "Sorry, something went wrong on our side. Please try again in a moment."
@@ -119,7 +141,7 @@ class Pipeline:
         redacted = sorted({tag for tag in ("EMAIL", "PHONE", "CARD", "ADDRESS") if f"[{tag}]" in turn.reply and f"[{tag}]" not in answer})
         turn.checks.append(Check("data masker", True, f"redacted {', '.join(redacted)}" if redacted else ""))
 
-        with closing(shop.connect(config.SHOP_DB)) as conn:
+        with tracer.start_as_current_span("memory.save"), closing(shop.connect(config.SHOP_DB)) as conn:
             shop.remember(conn, self.email, f"Asked: {message[:120]} | Answered: {turn.reply[:160]}")
         return turn
 

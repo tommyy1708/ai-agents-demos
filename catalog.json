@@ -7,15 +7,92 @@
       "summary": "Every message passes a sanitizer, a security judge and a guardrail; every reply is masked; every tool call is checked in code. Run the slides' requests through each layer, with and without the checks.",
       "path": "c4-secure-support-agent",
       "slides": [
-        { "resource": "lesson4", "pages": [28, 35] },
-        { "resource": "lesson4", "pages": [21, 27] },
-        { "resource": "lesson6", "pages": [25, 25] },
-        { "resource": "lesson6", "pages": [29, 30] }
+        {
+          "resource": "lesson4",
+          "pages": [
+            28,
+            35
+          ]
+        },
+        {
+          "resource": "lesson4",
+          "pages": [
+            21,
+            27
+          ]
+        },
+        {
+          "resource": "lesson6",
+          "pages": [
+            25,
+            25
+          ]
+        },
+        {
+          "resource": "lesson6",
+          "pages": [
+            29,
+            30
+          ]
+        }
       ],
       "run": "uv run support-agent demo",
-      "stack": ["Python", "Google ADK", "MCP", "A2A", "SQLite"],
-      "needs": ["uv"],
-      "optional": ["ANTHROPIC_API_KEY (runs in mock mode without it)"]
+      "stack": [
+        "Python",
+        "Google ADK",
+        "MCP",
+        "A2A",
+        "SQLite"
+      ],
+      "needs": [
+        "uv"
+      ],
+      "optional": [
+        "ANTHROPIC_API_KEY (runs in mock mode without it)"
+      ]
+    },
+    {
+      "id": "c6-golden-set-ci",
+      "title": "Tracing, a golden set, a release gate and a nightly judge",
+      "summary": "The Week 4 support agent with the after-launch layer: a trace of every request with its time and cost, a golden dataset that gates every release in CI, and a nightly judge that catches drift as a falling score.",
+      "path": "c6-golden-set-ci",
+      "slides": [
+        {
+          "resource": "lesson6",
+          "pages": [
+            28,
+            28
+          ]
+        },
+        {
+          "resource": "lesson6",
+          "pages": [
+            31,
+            32
+          ]
+        },
+        {
+          "resource": "lesson6",
+          "pages": [
+            10,
+            10
+          ]
+        }
+      ],
+      "run": "uv run golden run",
+      "stack": [
+        "Python",
+        "Google ADK",
+        "OpenTelemetry",
+        "GitHub Actions"
+      ],
+      "needs": [
+        "uv",
+        "the c4-secure-support-agent folder (clone the whole repository)"
+      ],
+      "optional": [
+        "ANTHROPIC_API_KEY (runs in mock mode without it)"
+      ]
     }
   ]
 }

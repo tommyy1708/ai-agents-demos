@@ -7,6 +7,7 @@ and follow its README.
 | Week | Demo | Slides | Run |
 |---|---|---|---|
 | 4 | [A secure customer-support agent (ADK + MCP + A2A)](c4-secure-support-agent/) | W4 21–35, W6 25 and 29–30 | `uv run support-agent demo` |
+| 6 | [Tracing, a golden set, a release gate and a nightly judge](c6-golden-set-ci/) | W6 10, 28 and 31–32 | `uv run golden run` |
 
 More demos are on the way, one week at a time.
 
