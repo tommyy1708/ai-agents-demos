@@ -19,3 +19,7 @@ More demos are on the way, one week at a time.
 - **Mapped to the slides.** The README says which slides each file illustrates.
 
 `catalog.json` lists the demos in a form Clarium Academy reads to show them next to the slides.
+
+## License
+
+The code is released under the [MIT License](LICENSE).
