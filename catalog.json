@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "demos": [
+    {
+      "id": "w4-secure-support-agent",
+      "title": "A secure customer-support agent (ADK + MCP + A2A)",
+      "summary": "Every message passes a sanitizer, a security judge and a guardrail; every reply is masked; every tool call is checked in code. Run the slides' requests through each layer, with and without the checks.",
+      "path": "w4-secure-support-agent",
+      "slides": [
+        { "resource": "lesson4", "pages": [28, 35] },
+        { "resource": "lesson4", "pages": [21, 27] },
+        { "resource": "lesson6", "pages": [25, 25] },
+        { "resource": "lesson6", "pages": [29, 30] }
+      ],
+      "run": "uv run support-agent demo",
+      "stack": ["Python", "Google ADK", "MCP", "A2A", "SQLite"],
+      "needs": ["uv"],
+      "optional": ["ANTHROPIC_API_KEY (runs in mock mode without it)"]
+    }
+  ]
+}
