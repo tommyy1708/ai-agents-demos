@@ -45,6 +45,17 @@ def test_bad_requests_get_a_reason_the_agent_can_read_out(check_in, check_out, g
         Hotel(today=MONDAY).availability(check_in, check_out, guests)
 
 
+@pytest.mark.parametrize("spoken, stored", [("555 010 0199", "5550100199"), ("+1 (555) 010-0199", "+15550100199"), ("5550100 199", "5550100199")])
+def test_phone_numbers_are_stored_as_digits(spoken, stored):
+    r = Hotel(today=MONDAY).reserve("Ana Lima", spoken, "standard_queen", TUESDAY, TUESDAY + timedelta(1), 1)
+    assert r.phone == stored
+
+
+def test_a_phone_number_too_short_is_asked_again():
+    with pytest.raises(BookingError, match="say it again"):
+        Hotel(today=MONDAY).reserve("Ana Lima", "555 01", "standard_queen", TUESDAY, TUESDAY + timedelta(1), 1)
+
+
 def test_confirmation_codes_avoid_letters_that_sound_alike():
     code = Hotel(today=MONDAY).reserve("Ana Lima", "555 010 0199", "standard_queen", TUESDAY, TUESDAY + timedelta(1), 1).code
     assert len(code) == 6 and not set(code) & set("0O1I")

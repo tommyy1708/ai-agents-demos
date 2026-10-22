@@ -4,10 +4,11 @@ it changes (text in a terminal, voice on your laptop, a room, a phone line).
 
 import logging
 import os
-from datetime import date
+from datetime import date, timedelta
 
 from livekit.agents import Agent, RunContext, ToolError, function_tool
 from livekit.agents.beta.tools import EndCallTool
+from livekit.agents.utils import is_given
 from livekit.plugins import anthropic
 
 from hotel_agent import knowledge
@@ -17,9 +18,13 @@ log = logging.getLogger("hotel_agent")
 
 # Any Claude model id. Haiku is the fastest Claude model, and on a call every 100 ms counts.
 MODEL = os.environ.get("HOTEL_AGENT_MODEL", "claude-haiku-5-5")
+# Thinking before each reply costs the caller time: in our measurements it took Claude Haiku 5.5's first token from
+# about 0.9 s to 1.5 s. A booking agent with clear tools doesn't need it. Set HOTEL_AGENT_THINKING=on to compare.
+THINKING = os.environ.get("HOTEL_AGENT_THINKING", "off") == "on"
 
 INSTRUCTIONS = """You are the voice reservation agent of the Clarium Bay Hotel. Callers talk to you on the phone.
-Today is {today}.
+Today is {today}. The next two weeks, so you never have to work out a date:
+{calendar}
 
 What you do: check room availability, make reservations, and answer questions about the hotel's policies.
 For anything else (changing or cancelling a booking, group bookings, complaints, special requests), offer to
@@ -30,11 +35,16 @@ emojis. Say prices and dates the way people say them out loud ("a hundred and fo
 "Friday the twelfth").
 
 Rules:
+- Never say your reasoning out loud. Call the tool, then give the caller the answer.
 - Answer policy questions only from lookup_policy. If it has no answer, say so and offer the front desk.
 - Before you book, read back the room, dates, number of guests, name and phone number, and get a clear yes.
 - After booking, read the confirmation code one character at a time.
 - Hotel reservations only. If the caller asks about something else, say politely that you can only help with
   reservations at the Clarium Bay Hotel, and steer back."""
+
+
+def _calendar(today: date, days: int = 14) -> str:
+    return "\n".join(f"- {(today + timedelta(d)).strftime('%A %B %d')}: {(today + timedelta(d)).isoformat()}" for d in range(1, days + 1))
 
 
 def _date(value: str, name: str) -> date:
@@ -49,7 +59,7 @@ class HotelAgent(Agent):
         self.hotel = hotel or Hotel()
         self.policies = knowledge.load()
         super().__init__(
-            instructions=INSTRUCTIONS.format(today=self.hotel.today.strftime("%A, %B %d, %Y")),
+            instructions=INSTRUCTIONS.format(today=self.hotel.today.strftime("%A, %B %d, %Y"), calendar=_calendar(self.hotel.today)),
             tools=[EndCallTool(extra_description="Use it after the caller says goodbye.")],
         )
 
@@ -121,5 +131,15 @@ class HotelAgent(Agent):
         return "Transfer requested. Tell the caller you're connecting them to the front desk now."
 
 
+class VoiceClaude(anthropic.LLM):
+    """Claude for a phone call: with thinking turned off unless HOTEL_AGENT_THINKING=on."""
+
+    def chat(self, *, extra_kwargs=None, **kwargs):
+        extra = dict(extra_kwargs) if extra_kwargs is not None and is_given(extra_kwargs) else {}
+        if not THINKING:
+            extra.setdefault("thinking", {"type": "disabled"})
+        return super().chat(extra_kwargs=extra, **kwargs)
+
+
 def build_llm() -> anthropic.LLM:
-    return anthropic.LLM(model=MODEL)
+    return VoiceClaude(model=MODEL)

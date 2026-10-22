@@ -78,6 +78,14 @@ caller waited … ms (end of turn …, Claude first token …, first audio …, 
 
 Slide 19 budgets about 700 ms from the end of your turn to the first sound. Compare, and notice what a tool call
 adds: the model first asks for the tool, the tool runs, and only then does the model start the reply you hear.
+In our first call, with Claude thinking before every reply, the waits were 5.5 s (a turn with an availability
+check), 2.4 s and 3.4 s, and Claude's first token was the largest part every time.
+
+So the agent runs Claude with **thinking turned off** (`VoiceClaude` in `agent.py`). With the hotel's prompt, that
+took Claude Haiku 5.5's first token from a median of 1.5 s to 0.9 s, and the evaluation cases still pass. Two
+things change with it: a calendar of the next two weeks is in the instructions, so the model never has to work
+out a date; and before a tool call it often says one short line, such as confirming the dates, which on a call
+fills the silence while the tool runs. Set `HOTEL_AGENT_THINKING=on` to hear the difference.
 (Press Ctrl+T to switch to text, Ctrl+C to quit. LiveKit is moving console mode into its own CLI as
 `lk agent console`; with the version pinned here, `hotel-voice console` works and prints a notice about it.)
 
@@ -123,8 +131,8 @@ These are the extensions from slides 44–45.
    steer back to reservations. Add one normal case and one prompt-injection case.
 4. **Add a language.** Route to French (`fr-FR`) only when the caller asks for it, keep French across turns, and
    switch back to English when asked. Look at the `language` options of the STT and TTS in `voice.py`.
-5. **Measure one change.** Run five voice turns and note the latency lines. Change one setting, such as the
-   endpointing delays (`turn_handling=TurnHandlingOptions(...)` on `AgentSession`) or the end-of-turn model, and
-   compare before and after.
+5. **Measure one change.** Run five voice turns and note the latency lines. Change one setting, such as
+   `HOTEL_AGENT_THINKING=on`, the endpointing delays (`turn_handling` on `AgentSession`) or the end-of-turn model,
+   and compare before and after.
 
 All names, numbers and policies here are made up.

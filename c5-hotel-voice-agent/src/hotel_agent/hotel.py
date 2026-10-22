@@ -7,6 +7,7 @@ The Clarium Bay Hotel is made up. Availability follows a fixed weekly pattern so
 date: the family suites are taken every Friday and Saturday night, and one deluxe king is taken every Saturday.
 """
 
+import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -108,8 +109,10 @@ class Hotel:
             raise BookingError(f"We don't have a room type called {room_type}.")
         if not guest_name.strip():
             raise BookingError("I need a name for the reservation.")
-        if sum(ch.isdigit() for ch in phone) < 7:
-            raise BookingError("I need a phone number with at least seven digits.")
+        # Speech-to-text writes numbers in many shapes ("555 010 0199", "5550100199 9"). Store digits only.
+        phone = re.sub(r"(?!^\+)\D", "", phone.strip())
+        if not 7 <= sum(ch.isdigit() for ch in phone) <= 15:
+            raise BookingError("That phone number doesn't look complete. Could you say it again?")
         if ROOM_TYPES[room_type].max_guests < guests:
             raise BookingError(f"A {ROOM_TYPES[room_type].name} sleeps at most {ROOM_TYPES[room_type].max_guests}.")
         self._check_dates(check_in, check_out)
@@ -117,6 +120,6 @@ class Hotel:
             raise BookingError(f"The {ROOM_TYPES[room_type].name} is no longer free for those dates.")
         # No 0/O or 1/I, so the code is easy to read out and to hear.
         code = "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(6))
-        r = Reservation(code, guest_name.strip(), phone.strip(), room_type, check_in, check_out, guests)
+        r = Reservation(code, guest_name.strip(), phone, room_type, check_in, check_out, guests)
         self.reservations[code] = r
         return r
