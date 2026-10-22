@@ -1,11 +1,12 @@
 # Clarium Academy · Agent engineering demos
 
 Runnable companions to the *AI Agent Engineering* course on Clarium Academy. Each folder is one demo, tied to the
-slides it illustrates. Clone the repo, open a folder, and follow its README.
+slides it illustrates. Folders are named `c<week>-<demo>` (c for Clarium): `c4-...` goes with week 4. Clone the repo, open a folder,
+and follow its README.
 
 | Week | Demo | Slides | Run |
 |---|---|---|---|
-| 4 | [A secure customer-support agent (ADK + MCP + A2A)](w4-secure-support-agent/) | W4 21–35, W6 25 and 29–30 | `uv run support-agent demo` |
+| 4 | [A secure customer-support agent (ADK + MCP + A2A)](c4-secure-support-agent/) | W4 21–35, W6 25 and 29–30 | `uv run support-agent demo` |
 
 More demos are on the way, one week at a time.
 

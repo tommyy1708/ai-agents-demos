@@ -36,7 +36,7 @@ checked) and watch what the prompt alone does.
 You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Python 3.11+ is installed for you.
 
 ```bash
-cd w4-secure-support-agent
+cd c4-secure-support-agent
 uv sync
 uv run support-agent demo            # the slides' requests through every layer
 uv run support-agent demo --unsafe   # the same, without the checks in code

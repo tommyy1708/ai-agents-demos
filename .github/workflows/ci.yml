@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        demo: [w4-secure-support-agent]
+        demo: [c4-secure-support-agent]
     defaults:
       run:
         working-directory: ${{ matrix.demo }}

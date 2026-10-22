@@ -2,10 +2,10 @@
   "version": 1,
   "demos": [
     {
-      "id": "w4-secure-support-agent",
+      "id": "c4-secure-support-agent",
       "title": "A secure customer-support agent (ADK + MCP + A2A)",
       "summary": "Every message passes a sanitizer, a security judge and a guardrail; every reply is masked; every tool call is checked in code. Run the slides' requests through each layer, with and without the checks.",
-      "path": "w4-secure-support-agent",
+      "path": "c4-secure-support-agent",
       "slides": [
         { "resource": "lesson4", "pages": [28, 35] },
         { "resource": "lesson4", "pages": [21, 27] },
