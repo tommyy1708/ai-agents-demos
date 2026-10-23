@@ -1,0 +1,27 @@
+[project]
+name = "voice-bench"
+version = "0.1.0"
+description = "Week 5 demo: the Week 4 support agent on a call, built cascaded and speech-to-speech, benchmarked head to head"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+  "livekit-agents[anthropic,google,silero]==1.8.8",
+  "python-dotenv>=1.0",
+]
+
+[project.scripts]
+bench = "voice_bench.cli:main"
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "pytest-asyncio==1.2.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/voice_bench"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

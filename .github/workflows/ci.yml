@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        demo: [c4-secure-support-agent, c5-hotel-voice-agent, c6-golden-set-ci]
+        demo: [c4-secure-support-agent, c5-hotel-voice-agent, c5-cascade-vs-s2s, c6-golden-set-ci]
     defaults:
       run:
         working-directory: ${{ matrix.demo }}

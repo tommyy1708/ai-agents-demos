@@ -8,15 +8,17 @@ and follow its README.
 |---|---|---|---|
 | 4 | [A secure customer-support agent (ADK + MCP + A2A)](c4-secure-support-agent/) | W4 21–35, W6 25 and 29–30 | `uv run support-agent demo` |
 | 5 | [A hotel voice reservation agent, one variable at a time](c5-hotel-voice-agent/) | W5 17–29, 41–45 and 86 | `uv run hotel smoke` |
+| 5 | [Cascaded vs speech-to-speech, head to head](c5-cascade-vs-s2s/) | W5 60–74 | `uv run bench cases` |
 | 6 | [Tracing, a golden set, a release gate and a nightly judge](c6-golden-set-ci/) | W6 10, 28 and 31–32 | `uv run golden run` |
 
 More demos are on the way, one week at a time.
 
 ## How every demo works
 
-- **Starts without an API key.** Weeks 4 and 6 have a mock mode that answers model calls with simple scripts; week 5
-  starts with a tools-only step. Set `ANTHROPIC_API_KEY` to use Claude. The voice steps of week 5 also need a free
-  LiveKit Cloud project.
+- **Starts without an API key.** Weeks 4 and 6 have a mock mode that answers model calls with simple scripts. Week 5's
+  hotel agent starts with a tools-only step, and its benchmark starts by listing its scripted calls. Set
+  `ANTHROPIC_API_KEY` to use Claude. The voice steps of week 5 also need a free LiveKit Cloud project, and its
+  benchmark a Google key for Gemini Live.
 - **Three commands or fewer** from a fresh clone to something on screen, with [uv](https://docs.astral.sh/uv/).
 - **Made-up data only.** Customers, orders and companies are fictional; emails use example.com.
 - **Tested.** Each demo has tests that run in mock mode, on every push.

@@ -103,6 +103,43 @@
       ]
     },
     {
+      "id": "c5-cascade-vs-s2s",
+      "title": "Cascaded vs speech-to-speech, head to head",
+      "summary": "The Week 4 support agent on a phone call, built as a cascade (speech-to-text, Claude, text-to-speech) and as speech-to-speech (Gemini Live). The same 15 recorded questions play into both at real speed; the benchmark scores latency, tool use, accuracy, leaks and cost, with 95% intervals.",
+      "path": "c5-cascade-vs-s2s",
+      "slides": [
+        {
+          "resource": "lesson5",
+          "pages": [
+            65,
+            74
+          ]
+        },
+        {
+          "resource": "lesson5",
+          "pages": [
+            60,
+            64
+          ]
+        }
+      ],
+      "run": "uv run bench cases",
+      "stack": [
+        "Python",
+        "LiveKit Agents",
+        "Claude",
+        "Gemini Live",
+        "Deepgram",
+        "Cartesia"
+      ],
+      "needs": [
+        "uv"
+      ],
+      "optional": [
+        "ANTHROPIC_API_KEY, a free LiveKit Cloud project and GOOGLE_API_KEY (to run the benchmark)"
+      ]
+    },
+    {
       "id": "c6-golden-set-ci",
       "title": "Tracing, a golden set, a release gate and a nightly judge",
       "summary": "The Week 4 support agent with the after-launch layer: a trace of every request with its time and cost, a golden dataset that gates every release in CI, and a nightly judge that catches drift as a falling score.",
